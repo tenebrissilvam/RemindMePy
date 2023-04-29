@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from src.bot.initializer.config_parcer import load_config
 from src.keyboards import time_buttons
 
-config = load_config("src/bot/initializer/bot.ini")
+config = load_config("bot.ini")
 database = sqlite3.connect(config.bot.DATABASE_PATH)
 cur = database.cursor()
 

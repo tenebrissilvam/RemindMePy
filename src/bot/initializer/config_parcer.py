@@ -18,4 +18,4 @@ def load_config(file_path: str) -> Config:
     config.read(file_path)
 
     bot = config['bot']
-    return Config(bot=Bot(TOKEN=bot['TOKEN'], DATABASE_PATH=bot['DATABASE_PATH']))
+    return Config(bot=Bot(TOKEN=bot['token'], DATABASE_PATH=bot['database_path']))

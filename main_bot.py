@@ -5,7 +5,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import ParseMode
+from aiogram.types import ParseMode, KeyboardButton, ReplyKeyboardMarkup
 from datetime import datetime, timedelta
 
 API_TOKEN = '6297173277:AAGGVmaSBa2a5VuGZSDdX9z9s2gCiQRU5eo'
@@ -20,23 +20,34 @@ class ReminderForm(StatesGroup):
     time = State()
 
 
+start_button = KeyboardButton('/start')
+help_button = KeyboardButton('/help')
+remind_button = KeyboardButton('/remind')
+
+keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+keyboard.row(start_button, help_button, remind_button)
+
+
 @dp.message_handler(Command("start"), state="*")
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.finish()
-    await bot.send_message(chat_id=message.chat.id, text="Привет! Это бот-напоминание.")
+    await bot.send_message(chat_id=message.chat.id, text="Привет! Это бот-напоминание.",
+                           reply_markup=keyboard)
 
 
 @dp.message_handler(Command("help"), state="*")
 async def cmd_help(message: types.Message, state: FSMContext):
     await state.finish()
     await bot.send_message(chat_id=message.chat.id,
-                           text="Этот бот может сохранять ваши сообщения и отправлять их в указанное время. Для этого используйте команду /remind.")
+                           text="Этот бот может сохранять ваши сообщения и отправлять их в указанное время. Для этого используйте команду /remind.",
+                           reply_markup=keyboard)
 
 
 @dp.message_handler(Command("remind"), state="*")
 async def cmd_remind(message: types.Message, state: FSMContext):
     await state.finish()
-    await bot.send_message(chat_id=message.chat.id, text="Введите сообщение, которое нужно отправить:")
+    await bot.send_message(chat_id=message.chat.id, text="Введите сообщение, которое нужно отправить:",
+                           reply_markup=keyboard)
     await ReminderForm.message.set()
 
 
@@ -55,8 +66,9 @@ async def process_time(message: types.Message, state: FSMContext):
             data['time'] = datetime.strptime(message.text, '%Y-%m-%d %H:%M:%S')
 
             if data['time'] < datetime.now():
-                await bot.send_message(chat_id=message.chat.id, text="Ой. Время бежит незаметно, уже " + str(datetime.now()) + ". Попробуйте снова")
-            #data['time'] -= timedelta(hours=3)  # учитываем разницу с UTC
+                await bot.send_message(chat_id=message.chat.id, text="Ой. Время бежит незаметно, уже " + str(
+                    datetime.now()) + ". Попробуйте снова")
+                # data['time'] -= timedelta(hours=3)  # учитываем разницу с UTC
                 return
         except ValueError:
             await bot.send_message(chat_id=message.chat.id, text="Неверный формат даты и времени.")
@@ -70,7 +82,7 @@ async def process_time(message: types.Message, state: FSMContext):
     print(remind_time)
     print(datetime.now())
     print((remind_time - datetime.now()).total_seconds())
-    await bot.send_message(chat_id=chat_id, text=message_text)
+    await bot.send_message(chat_id=chat_id, text='‼️Reminder‼️\n' + message_text)
     await state.finish()
 
 
