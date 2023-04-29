@@ -15,10 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 from utils.globals import Globals
 from utils.ReminderDB import ReminderForm
-
-
-
-
+from handlers.basic_commands import cmd_help, cmd_start
 
 async def set_reminder(chat_id, text, date):
     now = datetime.datetime.now(Globals.TIMEZONE)
@@ -43,17 +40,6 @@ async def set_reminder(chat_id, text, date):
     else:
         return False
 
-
-async def cmd_start(message: types.Message):
-    await message.answer(
-        "Привет! Этот бот поможет вам установить напоминания. Чтобы помотреть команды бота нажми /help."
-    )
-
-
-async def cmd_help(message: types.Message):
-    await message.answer(
-        "Доступные команды бота:\n /add_reminder,\n /edit_reminder, \n /delete_reminder, \n /list_all."
-    )
 
 
 async def cmd_add_reminder(message: types.Message, state: FSMContext):
@@ -87,13 +73,13 @@ async def process_date(message: types.Message, state: FSMContext):
                 data['date'] = date.timestamp()
             else:
                 await message.answer(
-                    "Ошибка: время напоминания должно быть позже текущего времени"
+                    "Время напоминания должно быть позже текущего времени"
                 )
                 await state.finish()
                 return
         except ValueError:
             await message.answer(
-                "Ошибка: неверный формат даты. Введите время в формате дд.мм.гггг чч:мм"
+                "Неверный формат даты. Введите время в формате дд.мм.гггг чч:мм"
             )
             await state.finish()
             return
@@ -342,6 +328,58 @@ async def process_reminder_text(message: types.Message, state: FSMContext):
         "When do you want to be reminded?\nPlease select the date and time in the format: dd.mm.yyyy hh:mm")
 
 
+####################
+
+'''
+@dp.message_handler(commands=['edit'])
+async def edit_reminder(message: types.Message):
+    """
+    This handler is used to edit an existing reminder.
+    """
+    try:
+        # Ask the user for the ID of the message they want to edit
+        await message.answer("Please enter the ID of the message you want to edit:")
+
+        # Wait for the user to enter the message ID
+        await ReminderForm.id.set()
+    except Exception as e:
+        logging.exception(e)
+
+
+@Globals.dp.message_handler(commands=['delete'])
+async def delete_reminder(message: types.Message):
+    """
+    This handler is used to delete an existing reminder.
+    """
+    try:
+        await message.answer("Введите id сообщения, которое вы хотите удалить. Список всех сообщений с их"
+                             "id можно получить при вызове команды /list_all")
+        await ReminderForm.id.set()
+    except Exception as e:
+        logging.exception(e)
+
+
+@Globals.dp.message_handler(state=ReminderForm.id)
+async def process_reminder_id(message: types.Message, state: FSMContext):
+    """
+    This handler is used to process the message ID entered by the user.
+    """
+    try:
+        # Extract the message ID entered by the user
+        reminder_id = message.text
+
+        # Store the message ID in the state so it can be used later when editing or deleting the reminder
+        await state.update_data(reminder_id=reminder_id)
+
+        # Ask the user whether they want to edit or delete the reminder
+        await message.answer("Do you want to edit or delete the reminder?", reply_markup=edit_delete_markup)
+
+        # Wait for the user to select an action
+        await ReminderForm.action.set()
+    except Exception as e:
+        logging.exception(e)
+
+'''
 if __name__ == '__main__':
     from aiogram import executor
 

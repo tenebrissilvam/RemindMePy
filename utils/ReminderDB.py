@@ -20,6 +20,7 @@ import datetime
 class ReminderForm(StatesGroup):
     text = State()
     date = State()
+    fill_in_id = State()
 
 
 class ReminderDB:
