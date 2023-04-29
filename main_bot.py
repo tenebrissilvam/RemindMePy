@@ -5,7 +5,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import ParseMode, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import ParseMode, KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 
 API_TOKEN = '6297173277:AAGGVmaSBa2a5VuGZSDdX9z9s2gCiQRU5eo'
@@ -18,6 +18,8 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 class ReminderForm(StatesGroup):
     message = State()
     time = State()
+    select_reminder = State()
+    edit_reminder = State()
 
 
 start_button = KeyboardButton('/start')
@@ -26,7 +28,6 @@ remind_button = KeyboardButton('/remind')
 
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 keyboard.row(start_button, help_button, remind_button)
-
 
 @dp.message_handler(Command("start"), state="*")
 async def cmd_start(message: types.Message, state: FSMContext):
@@ -49,7 +50,6 @@ async def cmd_remind(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=message.chat.id, text="Введите сообщение, которое нужно отправить:",
                            reply_markup=keyboard)
     await ReminderForm.message.set()
-
 
 @dp.message_handler(state=ReminderForm.message)
 async def process_message(message: types.Message, state: FSMContext):
@@ -82,9 +82,58 @@ async def process_time(message: types.Message, state: FSMContext):
     print(remind_time)
     print(datetime.now())
     print((remind_time - datetime.now()).total_seconds())
-    await bot.send_message(chat_id=chat_id, text='‼️Reminder‼️\n' + message_text)
+    await bot.send_message(chat_id=chat_id, text='‼️Вспомни‼️\n' + message_text)
     await state.finish()
 
+
+@dp.message_handler(Command("edit"))
+async def cmd_edit(message: types.Message, state: FSMContext):
+    reminders = db.get_reminders_by_chat_id(message.chat.id)  # список всех напоминаний
+    if len(reminders) == 0:
+        await bot.send_message(chat_id=message.chat.id, text="У вас нет напоминаний для редактирования.")
+        return
+
+    reminders_kb = InlineKeyboardMarkup()  # формируем клавиатуру с напоминаниями
+    for r in reminders:
+        reminders_kb.add(InlineKeyboardButton(text=r["text"], callback_data="edit_reminder:" + str(r["_id"])))
+
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Выберите напоминание для редактирования:",
+        reply_markup=reminders_kb
+    )
+
+    await ReminderForm.select_reminder.set()
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("edit_reminder"), state=ReminderFormEdit.select_reminder)
+async def process_edit_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    reminder_id = int(callback_query.data.split(":")[1])
+    reminder = db.get_reminder_by_id(reminder_id)
+
+    await bot.send_message(chat_id=callback_query.from_user.id, text="Введите новый текст напоминания:")
+    await ReminderForm.edit_message.set()
+
+    async with state.proxy() as data:
+        data["reminder_id"] = reminder_id
+        data["text"] = reminder["text"]
+
+
+# Обработчик ввода нового текста и сохранения изменений
+@dp.message_handler(state=ReminderForm.edit_message)
+async def process_edit_name(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    reminder_id = data["reminder_id"]
+    old_text = data["text"]
+    new_text = message.text
+    db.update_reminder_text(reminder_id, new_text)
+
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Напоминание '{old_text}' изменено на '{new_text}'"
+    )
+
+    await state.finish()
 
 @dp.message_handler(state="*", content_types=types.ContentType.ANY)
 async def unknown_command(message: types.Message, state: FSMContext):
