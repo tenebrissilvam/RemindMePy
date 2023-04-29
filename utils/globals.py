@@ -1,16 +1,5 @@
-import logging
-import sqlite3
-import asyncio
-import datetime
-
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ParseMode
-from aiogram.utils import exceptions
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Command, Text
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import ContentType
 
 from utils.ReminderDB import ReminderDB
 
