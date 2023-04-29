@@ -31,38 +31,103 @@ class ReminderForm(StatesGroup):
     select_reminder = State()
     edit_message = State()
     FSMContext = State()
+    text = State()
 
-def create_table():
-    cursor.execute('''CREATE TABLE IF NOT EXISTS reminders
-                    (chat_id INT, reminder_id INT, text TEXT, time TEXT)''')
-    conn.commit()
 
-def add_reminder(chat_id: int, reminder_id: int, text: str, time: str):
-    cursor.execute(f"INSERT INTO reminders VALUES ({chat_id}, {reminder_id}, '{text}', '{time}')")
-    conn.commit()
+class ReminderDB:
+    def __init__(self, db_filename):
+        self.db_filename = db_filename
+        self.conn = sqlite3.connect(db_filename)
+        self.create_table()
 
-def update_reminder_text(reminder_id: int, new_text:str):
-    cursor.execute(f"UPDATE reminders SET text = '{new_text}' WHERE reminder_id = {reminder_id}")
-    conn.commit()
+    def create_table(self):
+        """
+        Создание таблицы reminders, если она не существует
+        """
+        query = """CREATE TABLE IF NOT EXISTS reminders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_id INTEGER NOT NULL,
+                    text TEXT NOT NULL,
+                    date INTEGER NOT NULL
+                    );"""
+        self.conn.execute(query)
 
-def get_reminders_by_chat_id(chat_id: int):
-    cursor.execute(f"SELECT * FROM reminders WHERE chat_id = {chat_id}")
-    return cursor.fetchall()
+    def add_reminder(self, chat_id, text, date):
+        """
+        Добавление нового напоминания
+        """
+        query = "INSERT INTO reminders (chat_id, text, date) VALUES (?, ?, ?)"
+        self.conn.execute(query, (chat_id, text, date))
+        self.conn.commit()
 
-def get_reminder_by_id(reminder_id: int):
-    cursor.execute("SELECT * FROM reminders WHERE reminder_id = {reminder_id}")
-    return cursor.fetchone()
+    def get_reminders_by_chat_id(self, chat_id):
+        """
+        Получение списка всех напоминаний для конкретного чата (отсортированы по дате)
+        """
+        query = "SELECT * FROM reminders WHERE chat_id=? ORDER BY date ASC"
+        cursor = self.conn.execute(query, (chat_id,))
+        reminders = [{"_id": row[0], "chat_id": row[1], "text": row[2], "date": row[3]} for row in cursor.fetchall()]
+        return reminders
 
+    def get_reminder_by_id(self, reminder_id):
+        """
+        Получение отдельного напоминания по его идентификатору
+        """
+        query = "SELECT * FROM reminders WHERE id=?"
+        cursor = self.conn.execute(query, (reminder_id,))
+        reminder = cursor.fetchone()
+        if reminder:
+            return {"_id": reminder[0], "chat_id": reminder[1], "text": reminder[2], "date": reminder[3]}
+        else:
+            return None
+
+    def update_reminder_text(self, reminder_id, new_text):
+        """
+        Изменение текста существующего напоминания
+        """
+        query = "UPDATE reminders SET text=? WHERE id=?"
+        self.conn.execute(query, (new_text, reminder_id))
+        self.conn.commit()
+
+db = ReminderDB("reminders.db")
+
+@dp.message_handler(state=ReminderForm.text)
+async def process_text(message: types.Message, state: FSMContext):
+    chat_id = message.chat.id
+    text = message.text
+    date = datetime.datetime.now().timestamp() + REMINDER_TIMEDELTA
+    db.add_reminder(chat_id, text, date)
+
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Напоминание '{text}' добавлено на время {datetime.datetime.fromtimestamp(date).strftime('%d.%m.%Y %H:%M:%S')}"
+        )
+
+    await state.finish()
+
+@dp.message_handler(Command("list"))
+async def cmd_list(message: types.Message, state: FSMContext):
+    reminders = db.get_reminders_by_chat_id(message.chat.id)
+    if len(reminders) == 0:
+        await bot.send_message(chat_id=message.chat.id, text="У вас нет сохраненных напоминаний.")
+        return
+
+    msg = "Список ваших сохраненных напоминаний:\n"
+    for r in reminders:
+        msg += f"• {r['text']} - {datetime.datetime.fromtimestamp(r['date']).strftime('%d.%m.%Y %H:%M:%S')}\n"
+
+    await bot.send_message(chat_id=message.chat.id, text=msg)
 
 start_button = KeyboardButton('/start')
 help_button = KeyboardButton('/help')
-remind_button = KeyboardButton('/remind')
-all_reminder = KeyboardButton('/show_all')
+add_reminder = KeyboardButton('/add')
+#remind_button = KeyboardButton('/remind')
+list_reminder = KeyboardButton('/list')
 edit_reminder = KeyboardButton('/edit')
-delete_reminder = KeyboardButton('/delete_reminder')
+#delete_reminder = KeyboardButton('/delete_reminder')
 
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-keyboard.row(start_button, help_button, remind_button, edit_reminder)
+keyboard.row(start_button, help_button, add_reminder, edit_reminder, list_reminder)
 
 
 @dp.message_handler(Command("start"), state="*")
@@ -79,7 +144,7 @@ async def cmd_help(message: types.Message, state: FSMContext):
                            text="Этот бот может сохранять ваши сообщения и отправлять их в указанное время. Для этого используйте команду /remind.",
                            reply_markup=keyboard)
 
-
+'''
 @dp.message_handler(Command("remind"), state="*")
 async def cmd_remind(message: types.Message, state: FSMContext):
     await state.finish()
@@ -90,6 +155,8 @@ async def cmd_remind(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=ReminderForm.message)
 async def process_message(message: types.Message, state: FSMContext):
+    #create_table()
+    #add_reminder(message.chat.id, message.message_id, message.text, message.time)
     async with state.proxy() as data:
         data['message'] = message.text
     await bot.send_message(chat_id=message.chat.id, text="Введите дату и время в формате YYYY-MM-DD HH:MM:SS:")
@@ -122,7 +189,7 @@ async def process_time(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=chat_id, text='‼️Вспомни‼️\n' + message_text)
     await state.finish()
 
-
+'''
 @dp.message_handler(Command("edit"))
 async def cmd_edit(message: types.Message, state: FSMContext):
     reminders = get_reminders_by_chat_id(message.chat.id)  # список всех напоминаний
@@ -142,7 +209,7 @@ async def cmd_edit(message: types.Message, state: FSMContext):
 
     await ReminderForm.select_reminder.set()
 
-
+'''
 @dp.callback_query_handler(lambda c: c.data.startswith("edit_reminder"), state=ReminderForm.select_reminder)
 async def process_edit_callback(callback_query: types.CallbackQuery, state: FSMContext):
     reminder_id = int(callback_query.data.split(":")[1])
@@ -154,8 +221,10 @@ async def process_edit_callback(callback_query: types.CallbackQuery, state: FSMC
     async with state.proxy() as data:
         data["reminder_id"] = reminder_id
         data["text"] = reminder["text"]
+bot.
+'''
 
-
+'''
 # Обработчик ввода нового текста и сохранения изменений
 @dp.message_handler(state=ReminderForm.edit_message)
 async def process_edit_name(message: types.Message, state: FSMContext):
@@ -171,6 +240,8 @@ async def process_edit_name(message: types.Message, state: FSMContext):
     )
 
     await state.finish()
+
+'''
 
 
 @dp.message_handler(state="*", content_types=types.ContentType.ANY)
