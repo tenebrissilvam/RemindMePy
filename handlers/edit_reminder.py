@@ -8,6 +8,7 @@ import logging
 from aiogram.types import ParseMode
 from aiogram.utils import exceptions
 
+
 async def set_reminder(chat_id, text, date):
     now = datetime.datetime.now(Globals.TIMEZONE)
     delta = date - now.timestamp()
@@ -42,6 +43,12 @@ async def process_text(message: types.Message, state: FSMContext):
     )
 
     await ReminderForm.date.set()
+@Globals.dp.message_handler(state=ReminderForm.fix_text)
+async def process_fix_text(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['text'] = message.text
+
+    await state.finish()
 
 
 @Globals.dp.message_handler(state=ReminderForm.date)
@@ -77,6 +84,7 @@ async def process_date(message: types.Message, state: FSMContext):
     asyncio.create_task(set_reminder(chat_id, text, date))
 
     await state.finish()
+
 
 
 async def cmd_edit_reminder(message: types.Message, state: FSMContext):
@@ -115,8 +123,6 @@ async def cmd_edit_reminder(message: types.Message, state: FSMContext):
             ]
         ])
     )
-
-
 async def process_edit_text(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         reminder_id = data.get('reminder_id')
@@ -135,10 +141,6 @@ async def process_edit_text(message: types.Message, state: FSMContext):
     await message.answer(
         f"Текст напоминания с id {reminder_id} изменен"
     )
-
-    reminder = Globals.db.get_reminder_by_id(reminder_id)
-    asyncio.create_task(set_reminder(reminder['chat_id'], new_text, reminder['date']))
-
     await state.finish()
 
 
@@ -177,6 +179,7 @@ async def process_edit_date(message: types.Message, state: FSMContext):
         date_str = f"{message.text}"
         date = datetime.datetime.strptime(date_str, "%d.%m.%Y %H:%M")
         if date.timestamp() - now.timestamp() > 0:
+            # Update the reminder date in the database
             Globals.db.update_reminder_date(reminder_id, date.timestamp())
         else:
             await message.answer(
@@ -194,10 +197,4 @@ async def process_edit_date(message: types.Message, state: FSMContext):
     await message.answer(
         f"Дата сообщения с id {reminder_id} изменена"
     )
-
-    reminder = Globals.db.get_reminder_by_id(reminder_id)
-    asyncio.create_task(set_reminder(reminder['chat_id'], reminder['text'], reminder['date']))
-
     await state.finish()
-
-

@@ -6,6 +6,8 @@ class ReminderForm(StatesGroup):
     text = State()
     date = State()
     fill_in_id = State()
+    fix_text = State()
+    fix_date = State()
 
 
 class ReminderDB:

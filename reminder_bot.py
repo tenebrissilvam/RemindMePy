@@ -31,7 +31,7 @@ async def cmd_help_message(message: types.Message):
 
 
 @Globals.dp.message_handler(Command('add_reminder'))
-async def process_add_reminder(message: types.Message, state: FSMContext):
+async def process_add_reminder(message: types.Message):
     await cmd_add_reminder(message)
 
 
