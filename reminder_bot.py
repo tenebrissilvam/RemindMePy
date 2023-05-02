@@ -51,7 +51,7 @@ async def process_list_all(message: types.Message, state: FSMContext):
 
 
 @Globals.dp.message_handler(content_types=ContentType.ANY)
-async def unknown_message(message: types.Message, state: FSMContext):
+async def unknown_message(message: types.Message):
     await message.answer(
         "Ошибка: неверная команда"
     )

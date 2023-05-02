@@ -12,9 +12,11 @@ class Globals:
 
     BOT_TOKEN = "6297173277:AAGGVmaSBa2a5VuGZSDdX9z9s2gCiQRU5eo"
     TIMEZONE = datetime.timezone(datetime.timedelta(hours=3))
-    DB_FILENAME = "../reminders.db"
+    DB_FILENAME = "reminders.db"
 
     bot = Bot(token=BOT_TOKEN)
+    tasks = {}
+
     storage = MemoryStorage()
     dp = Dispatcher(bot, storage=storage)
     db = ReminderDB(DB_FILENAME)
