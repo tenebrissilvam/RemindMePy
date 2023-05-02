@@ -88,3 +88,39 @@ async def process_date(message: types.Message, state: FSMContext):
     Globals.tasks[reminder_id] = task
 
     await state.finish()
+
+@Globals.dp.message_handler(state=ReminderForm.delete)
+async def process_fix_text(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['id'] = int(message.text)
+
+    try:
+        reminder_id = data['id']
+    except IndexError:
+        await message.answer(
+            "Ошибка: необходимо передать id сообщения, которое нужно удалить"
+        )
+        await state.finish()
+        return
+    except ValueError:
+        await message.answer(
+            "Ошибка: id сообщения должно быть числом"
+        )
+        await state.finish()
+        return
+
+    reminder = Globals.db.get_reminder_by_id(reminder_id)
+    if reminder is None:
+        await message.answer(
+            "Ошибка: сообщение с таким id не найдено"
+        )
+        await state.finish()
+        return
+
+    Globals.db.delete_reminder(reminder_id)
+
+    await message.answer(
+        f"Напоминание '{reminder['text']}' с id {reminder_id} удалено"
+    )
+
+    await state.finish()

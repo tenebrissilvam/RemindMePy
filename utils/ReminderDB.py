@@ -5,6 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 class ReminderForm(StatesGroup):
     text = State()
     date = State()
+    delete = State()
     fill_in_id = State()
     fix_text = State()
     fix_date = State()
