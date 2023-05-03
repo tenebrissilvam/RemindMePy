@@ -83,11 +83,15 @@ async def process_date(message: types.Message, state: FSMContext):
     await message.answer(
         f"Напоминание '{text}' добавлено на время {datetime.datetime.fromtimestamp(date, Globals.TZ).strftime('%d.%m.%Y %H:%M:%S')}")
 
-    reminder_id = data.get('reminder_id')
     task = asyncio.create_task(set_reminder(chat_id, text, date))
-    Globals.tasks[reminder_id] = task
+
+    reminders = Globals.db.get_all_reminders()
+    if len(reminders) != 0:
+        reminder_id = reminders[-1]['_id']
+        Globals.tasks[reminder_id] = task
 
     await state.finish()
+
 
 @Globals.dp.message_handler(state=ReminderForm.delete)
 async def process_fix_text(message: types.Message, state: FSMContext):
@@ -122,5 +126,12 @@ async def process_fix_text(message: types.Message, state: FSMContext):
     await message.answer(
         f"Напоминание '{reminder['text']}' с id {reminder_id} удалено"
     )
+
+    if datetime.datetime.now(Globals.TIMEZONE).timestamp() < reminder['date']:
+
+        task = Globals.tasks[reminder_id]
+        if task is not None:
+            task.cancel()
+            del Globals.tasks[reminder_id]
 
     await state.finish()
