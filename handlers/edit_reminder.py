@@ -80,35 +80,25 @@ async def process_edit_text(message: types.Message, state: FSMContext):
 async def process_edit_callback(callback_query: types.CallbackQuery, state: FSMContext):
     data = callback_query.data
     # reminder_id = (await state.get_data()).get('reminder_id')
-    print(data)
     if data == "edit_text":
         await ReminderForm.text.set()
         await callback_query.message.answer(
             "Введите новый текст напоминания"
         )
         await ReminderForm.edit_text.set()
-        # await state.update_data({'edit_mode': 'edit_text'})
+
     elif data == "edit_date":
         await ReminderForm.date.set()
         await callback_query.message.answer(
             "Введите новое время отправки напоминания в формате дд.мм.гггг чч:мм"
         )
         await ReminderForm.edit_date.set()
-        # await state.update_data({'edit_mode': 'edit_date'})
 
 
 @Globals.dp.message_handler(state=ReminderForm.edit_date)
 async def process_edit_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        reminder_id = data.get('reminder_id')
-        edit_mode = data.get('edit_mode')
-
-    if reminder_id is None or edit_mode != 'date':
-        await message.answer(
-            "Ошибка: неверный формат запроса"
-        )
-        await state.finish()
-        return
+        reminder_id = Globals.edit_id
 
     now = datetime.datetime.now(Globals.TIMEZONE)
     try:
@@ -132,14 +122,5 @@ async def process_edit_date(message: types.Message, state: FSMContext):
     await message.answer(
         f"Дата сообщения с id {reminder_id} изменена"
     )
-
-    task = Globals.tasks.get(reminder_id)
-    if task is not None:
-        task.cancel()
-        del Globals.tasks[reminder_id]
-
-    reminder = Globals.db.get_reminder_by_id(reminder_id)
-    task = asyncio.create_task(set_reminder(reminder['chat_id'], reminder['text'], date.timestamp()))
-    Globals.tasks[reminder_id] = task
 
     await state.finish()
