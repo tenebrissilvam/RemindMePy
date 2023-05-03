@@ -20,3 +20,5 @@ class Globals:
     storage = MemoryStorage()
     dp = Dispatcher(bot, storage=storage)
     db = ReminderDB(DB_FILENAME)
+
+    edit_id = 0

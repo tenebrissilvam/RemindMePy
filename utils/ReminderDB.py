@@ -6,9 +6,10 @@ class ReminderForm(StatesGroup):
     text = State()
     date = State()
     delete = State()
+    edit = State()
     fill_in_id = State()
-    fix_text = State()
-    fix_date = State()
+    edit_text = State()
+    edit_date = State()
 
 
 class RunningTasks:
@@ -34,7 +35,6 @@ class ReminderDB:
         query = "INSERT INTO reminders (chat_id, text, date) VALUES (?, ?, ?)"
         self.conn.execute(query, (chat_id, text, date))
         self.conn.commit()
-
 
     def get_reminder_by_id(self, reminder_id):
         query = "SELECT * FROM reminders WHERE id=?"

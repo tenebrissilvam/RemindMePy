@@ -45,14 +45,6 @@ async def process_text(message: types.Message, state: FSMContext):
     await ReminderForm.date.set()
 
 
-@Globals.dp.message_handler(state=ReminderForm.fix_text)
-async def process_fix_text(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['text'] = message.text
-
-    await state.finish()
-
-
 @Globals.dp.message_handler(state=ReminderForm.date)
 async def process_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
@@ -94,7 +86,7 @@ async def process_date(message: types.Message, state: FSMContext):
 
 
 @Globals.dp.message_handler(state=ReminderForm.delete)
-async def process_fix_text(message: types.Message, state: FSMContext):
+async def process_delete(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['id'] = int(message.text)
 
