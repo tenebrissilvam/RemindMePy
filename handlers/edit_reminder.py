@@ -79,7 +79,7 @@ async def process_edit_text(message: types.Message, state: FSMContext):
 
 async def process_edit_callback(callback_query: types.CallbackQuery, state: FSMContext):
     data = callback_query.data
-    # reminder_id = (await state.get_data()).get('reminder_id')
+
     if data == "edit_text":
         await ReminderForm.text.set()
         await callback_query.message.answer(
@@ -122,5 +122,30 @@ async def process_edit_date(message: types.Message, state: FSMContext):
     await message.answer(
         f"Дата сообщения с id {reminder_id} изменена"
     )
+
+    chat_id = 0
+    text = ''
+    old_date = ''
+
+    reminders = Globals.db.get_all_reminders()
+    for reminder in reminders:
+        if reminder['_id'] == reminder_id:
+            chat_id = reminder['chat_id']
+            text = reminder['text']
+            old_date = reminder['date']
+
+    if datetime.datetime.now(Globals.TIMEZONE).timestamp() <= old_date:
+
+        task = Globals.tasks[reminder_id]
+        if task is not None:
+            task.cancel()
+            del Globals.tasks[reminder_id]
+
+    task = asyncio.create_task(set_reminder(chat_id, text, date))
+
+    reminders = Globals.db.get_all_reminders()
+    if len(reminders) != 0:
+        reminder_id = reminders[-1]['_id']
+        Globals.tasks[reminder_id] = task
 
     await state.finish()
