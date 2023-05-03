@@ -4,6 +4,7 @@ import datetime
 
 from aiogram.dispatcher import FSMContext
 
+
 async def cmd_list_all(message: types.Message, state: FSMContext):
     reminders = Globals.db.get_all_reminders()
 

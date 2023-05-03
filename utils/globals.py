@@ -22,3 +22,8 @@ class Globals:
     db = ReminderDB(DB_FILENAME)
 
     edit_id = 0
+
+    EMAIL_FROM = 'remindmepy2@gmail.com'
+    EMAIL_SMTP_SERVER = 'smtp.gmail.com'
+    EMAIL_SMTP_PORT = 465
+    EMAIL_PASSWORD = 'remindmepypythonproject2'

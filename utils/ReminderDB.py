@@ -10,7 +10,8 @@ class ReminderForm(StatesGroup):
     fill_in_id = State()
     edit_text = State()
     edit_date = State()
-
+    name = State()
+    email = State()
 
 class RunningTasks:
     tasks = {}
@@ -21,6 +22,7 @@ class ReminderDB:
         self.db_filename = db_filename
         self.conn = sqlite3.connect(db_filename)
         self.create_table()
+        self.create_user_table()
 
     def create_table(self):
         query = """CREATE TABLE IF NOT EXISTS reminders (
@@ -30,6 +32,28 @@ class ReminderDB:
                     date INTEGER NOT NULL
                     );"""
         self.conn.execute(query)
+
+    def create_user_table(self):
+        query = """CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name INTEGER NOT NULL,
+                    email TEXT NOT NULL
+                    );"""
+        self.conn.execute(query)
+
+    def add_user(self, name, email):
+        query = "INSERT INTO users (name, email) VALUES (?, ?, ?)"
+        self.conn.execute(query, (name, email))
+        self.conn.commit()
+
+    def get_email_by_name(self, name):
+        query = "SELECT * FROM users WHERE name=?"
+        cursor = self.conn.execute(query, (name,))
+        user = cursor.fetchone()
+        if user:
+            return user[2]
+        else:
+            return None
 
     def add_reminder(self, chat_id, text, date):
         query = "INSERT INTO reminders (chat_id, text, date) VALUES (?, ?, ?)"
