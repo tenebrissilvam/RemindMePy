@@ -12,8 +12,6 @@ from handlers.list_all_reminders import cmd_list_all
 from handlers.delete_reminder import cmd_delete_reminder
 from handlers.edit_reminder import cmd_edit_reminder, process_edit_callback
 
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-
 logging.basicConfig(level=logging.INFO)
 
 @Globals.dp.callback_query_handler(lambda c: c.data in ['edit_text', 'edit_date'])
