@@ -1,23 +1,22 @@
-import logging
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.types import ContentType
 
-from utils.globals import Globals
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 from handlers.basic_commands import cmd_help, cmd_start
 from handlers.add_reminder import cmd_add_reminder
 from handlers.list_all_reminders import cmd_list_all
 from handlers.delete_reminder import cmd_delete_reminder
 from handlers.edit_reminder import cmd_edit_reminder, process_edit_callback
 
-from utils.ReminderDB import ReminderForm
-
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
+import logging
 import smtplib
+
+from utils.globals import Globals
+from utils.ReminderDB import ReminderForm
 
 logging.basicConfig(level=logging.INFO)
 

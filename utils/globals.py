@@ -1,16 +1,16 @@
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from utils.ReminderDB import ReminderDB
-
-from pytz import timezone
 import datetime
+from pytz import timezone
+
+from utils.ReminderDB import ReminderDB
 
 
 class Globals:
     TZ = timezone('Europe/Moscow')
 
-    BOT_TOKEN = "6297173277:AAGGVmaSBa2a5VuGZSDdX9z9s2gCiQRU5eo"
+    BOT_TOKEN = ""
     TIMEZONE = datetime.timezone(datetime.timedelta(hours=3))
     DB_FILENAME = "utils/reminders.db"
 

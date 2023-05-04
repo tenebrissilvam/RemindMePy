@@ -1,5 +1,4 @@
 from aiogram import types
-from utils.globals import Globals
 from aiogram.dispatcher import FSMContext
 from utils.ReminderDB import ReminderForm
 

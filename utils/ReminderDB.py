@@ -1,5 +1,5 @@
-import sqlite3
 from aiogram.dispatcher.filters.state import State, StatesGroup
+import sqlite3
 
 
 class ReminderForm(StatesGroup):
@@ -12,9 +12,6 @@ class ReminderForm(StatesGroup):
     edit_date = State()
     name = State()
     email = State()
-
-class RunningTasks:
-    tasks = {}
 
 
 class ReminderDB:

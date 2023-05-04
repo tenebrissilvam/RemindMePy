@@ -1,8 +1,9 @@
 from aiogram import types
-from utils.globals import Globals
+from aiogram.dispatcher import FSMContext
+
 import datetime
 
-from aiogram.dispatcher import FSMContext
+from utils.globals import Globals
 
 
 async def cmd_list_all(message: types.Message, state: FSMContext):
